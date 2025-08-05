@@ -1,12 +1,8 @@
+// src/services/googleBooksAPI.js - Fixed 
+
 const GOOGLE_BOOKS_BASE_URL = "https://www.googleapis.com/books/v1/volumes";
 
 export class GoogleBooksAPI {
-  /**
-   * Search for books using Google Books API
-   * @param {string} query - Search query (title, author, ISBN, etc.)
-   * @param {number} maxResults - Maximum number of results (default: 20)
-   * @returns {Promise<Array>} - Array of book objects
-   */
   static async searchBooks(query, maxResults = 20) {
     try {
       const url = `${GOOGLE_BOOKS_BASE_URL}?q=${encodeURIComponent(
@@ -27,11 +23,6 @@ export class GoogleBooksAPI {
     }
   }
 
-  /**
-   * Get detailed information about a specific book
-   * @param {string} bookId - Google Books volume ID
-   * @returns {Promise<Object>} - Detailed book object
-   */
   static async getBookDetails(bookId) {
     try {
       const url = `${GOOGLE_BOOKS_BASE_URL}/${bookId}`;
@@ -50,48 +41,11 @@ export class GoogleBooksAPI {
     }
   }
 
-  /**
-   * Search books by specific criteria
-   * @param {Object} criteria - Search criteria object
-   * @returns {Promise<Array>} - Array of book objects
-   */
-  static async searchByCategory(criteria) {
-    const { author, title, subject, isbn } = criteria;
-    let query = "";
-
-    if (title) query += `intitle:${title} `;
-    if (author) query += `inauthor:${author} `;
-    if (subject) query += `subject:${subject} `;
-    if (isbn) query += `isbn:${isbn} `;
-
-    return this.searchBooks(query.trim());
-  }
-
-  /**
-   * Get popular books by category
-   * @param {string} category - Book category/genre
-   * @param {number} maxResults - Maximum results
-   * @returns {Promise<Array>} - Array of book objects
-   */
-  static async getPopularByCategory(category, maxResults = 20) {
-    const query = `subject:${category}&orderBy=relevance`;
-    return this.searchBooks(query, maxResults);
-  }
-
-  /**
-   * Format multiple book results from Google Books API
-   * @param {Array} items - Raw items from Google Books API
-   * @returns {Array} - Formatted book objects
-   */
   static formatBookResults(items) {
     return items.map((item) => this.formatSingleBook(item));
   }
 
-  /**
-   * Format a single book from Google Books API
-   * @param {Object} item - Raw book item from Google Books API
-   * @returns {Object} - Formatted book object
-   */
+  // FIXED: Better date handling
   static formatSingleBook(item) {
     const volumeInfo = item.volumeInfo || {};
     const imageLinks = volumeInfo.imageLinks || {};
@@ -102,7 +56,7 @@ export class GoogleBooksAPI {
       authors: volumeInfo.authors || ["Unknown Author"],
       author: (volumeInfo.authors || ["Unknown Author"]).join(", "),
       description: volumeInfo.description || "No description available",
-      publishedDate: volumeInfo.publishedDate || null,
+      publishedDate: this.formatPublishedDate(volumeInfo.publishedDate), // FIXED
       pageCount: volumeInfo.pageCount || null,
       categories: volumeInfo.categories || [],
       genre: (volumeInfo.categories || [])[0] || "Unknown",
@@ -118,17 +72,29 @@ export class GoogleBooksAPI {
         imageLinks.thumbnail || imageLinks.smallThumbnail || null,
       previewLink: volumeInfo.previewLink || null,
       infoLink: volumeInfo.infoLink || null,
-      // Additional fields for our database
-      publication_date: volumeInfo.publishedDate || null,
+      // For database compatibility
+      publication_date: this.formatPublishedDate(volumeInfo.publishedDate), // FIXED
     };
   }
 
-  /**
-   * Extract ISBN from industry identifiers
-   * @param {Array} identifiers - Industry identifiers array
-   * @param {string} type - ISBN type (ISBN_10 or ISBN_13)
-   * @returns {string|null} - ISBN or null
-   */
+  // NEW: Handle partial dates from Google Books
+  static formatPublishedDate(dateString) {
+    if (!dateString) return null;
+
+    // If it's just a year (like "2017"), convert to full date
+    if (/^\d{4}$/.test(dateString)) {
+      return `${dateString}-01-01`;
+    }
+
+    // If it's year-month (like "2017-03"), add day
+    if (/^\d{4}-\d{2}$/.test(dateString)) {
+      return `${dateString}-01`;
+    }
+
+    // If it's already a full date or other format, return as-is
+    return dateString;
+  }
+
   static extractISBN(identifiers, type) {
     if (!identifiers) return null;
 
@@ -136,12 +102,6 @@ export class GoogleBooksAPI {
     return identifier ? identifier.identifier : null;
   }
 
-  /**
-   * Get book suggestions based on a book title or author
-   * @param {string} bookTitle - Title of the book
-   * @param {string} author - Author name (optional)
-   * @returns {Promise<Array>} - Array of similar books
-   */
   static async getSimilarBooks(bookTitle, author = "") {
     try {
       let query = bookTitle;
@@ -151,7 +111,6 @@ export class GoogleBooksAPI {
 
       const books = await this.searchBooks(query, 10);
 
-      // Filter out the exact same book if possible
       return books.filter(
         (book) => book.title.toLowerCase() !== bookTitle.toLowerCase()
       );
@@ -174,5 +133,4 @@ export function getBookCoverUrl(book, size = "thumbnail") {
   )}`;
 }
 
-// Export default
 export default GoogleBooksAPI;
