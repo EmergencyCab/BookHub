@@ -1,4 +1,4 @@
-// src/components/Header.jsx
+//Header.jsx
 import { Link, useLocation } from "react-router-dom";
 import SearchBar from "./SearchBar";
 

@@ -1,4 +1,4 @@
-// src/pages/CreatePost.jsx
+//CreatePost.jsx - Updated with security
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import BookSearch from "../components/BookSearch";
@@ -16,6 +16,7 @@ function CreatePost() {
     type: "review",
     rating: "",
     author_name: "",
+    secret_key: "", // New security field
   });
   const [selectedBook, setSelectedBook] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,8 +33,17 @@ function CreatePost() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.title.trim() || !formData.author_name.trim()) {
-      setError("Please fill in all required fields");
+    if (
+      !formData.title.trim() ||
+      !formData.author_name.trim() ||
+      !formData.secret_key.trim()
+    ) {
+      setError("Please fill in all required fields including secret key");
+      return;
+    }
+
+    if (formData.secret_key.length < 4) {
+      setError("Secret key must be at least 4 characters long");
       return;
     }
 
@@ -57,7 +67,6 @@ function CreatePost() {
       let bookId = null;
 
       if (selectedBook) {
-        // Create or find the book in our database
         const book = await findOrCreateBook(selectedBook);
         bookId = book.id;
       }
@@ -69,6 +78,7 @@ function CreatePost() {
         book_id: bookId,
         rating: formData.type === "review" ? parseInt(formData.rating) : null,
         author_name: formData.author_name.trim(),
+        secret_key: formData.secret_key.trim(), // Include secret key
       };
 
       const newPost = await createPost(postData);
@@ -214,6 +224,25 @@ function CreatePost() {
               placeholder="Enter your name"
               required
             />
+          </div>
+
+          {/* Secret Key - NEW SECURITY FIELD */}
+          <div className="form-group">
+            <label htmlFor="secret_key">Secret Key * 🔐</label>
+            <input
+              type="password"
+              id="secret_key"
+              name="secret_key"
+              value={formData.secret_key}
+              onChange={handleInputChange}
+              placeholder="Create a secret key to edit/delete this post later"
+              required
+              minLength="4"
+            />
+            <small className="field-help">
+              💡 Remember this! You'll need it to edit or delete your post
+              later.
+            </small>
           </div>
 
           {/* Submit Button */}

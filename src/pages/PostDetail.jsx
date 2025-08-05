@@ -1,4 +1,4 @@
-// src/pages/PostDetail.jsx
+//PostDetail.jsx - Updated with security
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
@@ -16,6 +16,9 @@ function PostDetail() {
   const [error, setError] = useState("");
   const [isUpvoting, setIsUpvoting] = useState(false);
   const [showEditForm, setShowEditForm] = useState(false);
+  const [showSecretPrompt, setShowSecretPrompt] = useState(false);
+  const [secretKey, setSecretKey] = useState("");
+  const [action, setAction] = useState(""); // 'edit' or 'delete'
   const [editData, setEditData] = useState({
     title: "",
     content: "",
@@ -81,6 +84,37 @@ function PostDetail() {
     } finally {
       setIsUpvoting(false);
     }
+  };
+
+  const requestSecretKey = (actionType) => {
+    setAction(actionType);
+    setSecretKey("");
+    setShowSecretPrompt(true);
+  };
+
+  const verifySecretKey = () => {
+    if (!secretKey.trim()) {
+      alert("Please enter the secret key");
+      return;
+    }
+
+    if (secretKey.trim() !== post.secret_key) {
+      alert(
+        "Incorrect secret key! You can only edit/delete posts you created."
+      );
+      setSecretKey("");
+      return;
+    }
+
+    // Secret key is correct
+    if (action === "edit") {
+      setShowEditForm(true);
+    } else if (action === "delete") {
+      handleDelete();
+    }
+
+    setShowSecretPrompt(false);
+    setSecretKey("");
   };
 
   const handleEdit = async (e) => {
@@ -194,6 +228,35 @@ function PostDetail() {
           </Link>
         </div>
 
+        {/* Secret Key Prompt Modal */}
+        {showSecretPrompt && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h3>🔐 Enter Secret Key</h3>
+              <p>You need the secret key to {action} this post.</p>
+              <input
+                type="password"
+                value={secretKey}
+                onChange={(e) => setSecretKey(e.target.value)}
+                placeholder="Enter secret key..."
+                className="secret-input"
+                onKeyPress={(e) => e.key === "Enter" && verifySecretKey()}
+              />
+              <div className="modal-actions">
+                <button
+                  onClick={() => setShowSecretPrompt(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button onClick={verifySecretKey} className="btn-primary">
+                  Verify
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Post Header */}
         <header className="post-header">
           <div className="post-meta">
@@ -219,12 +282,15 @@ function PostDetail() {
               👍 {post.upvotes || 0}
             </button>
             <button
-              onClick={() => setShowEditForm(!showEditForm)}
+              onClick={() => requestSecretKey("edit")}
               className="edit-btn"
             >
               ✏️ Edit
             </button>
-            <button onClick={handleDelete} className="delete-btn">
+            <button
+              onClick={() => requestSecretKey("delete")}
+              className="delete-btn"
+            >
               🗑️ Delete
             </button>
           </div>

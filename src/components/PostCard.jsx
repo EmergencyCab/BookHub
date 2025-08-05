@@ -1,4 +1,4 @@
-// src/components/PostCard.jsx
+//PostCard.jsx
 import { Link } from "react-router-dom";
 import { getBookCoverUrl } from "../services/googleBooksAPI";
 

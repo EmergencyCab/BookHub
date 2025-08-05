@@ -1,4 +1,4 @@
-// src/components/SearchBar.jsx
+//SearchBar.jsx
 import { useState } from "react";
 
 function SearchBar({ onSearch, placeholder = "Search posts..." }) {

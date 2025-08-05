@@ -1,4 +1,4 @@
-// src/components/BookSearch.jsx
+//BookSearch.jsx
 import { useState, useEffect } from "react";
 import GoogleBooksAPI, { getBookCoverUrl } from "../services/googleBooksAPI";
 
