@@ -6,6 +6,8 @@ This web app: **A comprehensive book community platform where users can write re
 
 Time spent: **25** hours spent in total
 
+Gif: https://imgur.com/a/kW7QnMP ; liceCap and imgur
+
 ## Required Features
 
 The following **required** functionality is completed:
